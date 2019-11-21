@@ -1,6 +1,7 @@
 import numpy as np
+import pandas as pd
 import utils
-
+from sklearn.neural_network import MLPClassifier
 
 #Perfect Instances
 five =  [0,1,1,1,0, 0,1,0,0,0, 0,1,1,1,0, 0,0,0,1,0, 0,1,1,1,0]
@@ -11,14 +12,21 @@ def loadGeneratedData():
 	print("TODO")
 
 def distort_input(instance, percent_distortion):
-
     #percent distortion should be a float from 0-1
     #Should return a distorted version of the instance, relative to distoriton Rate
-	utils.raiseNotDefined()
-    print("TODO")
+	tmp = []
+	for i in instance:
+		if np.random.random() < percent_distortion:
+			if i == 1:
+				tmp.append(0)
+			else:
+				tmp.append(1)
+		else:
+			tmp.append(i)
+	return tmp
 
 
-#  size of our weight matrix should be 25x25 and not 5x5??????
+
 class HopfieldNetwork:
 	def __init__(self, size):
 		self.h = np.zeros([size,size])
@@ -42,29 +50,52 @@ class HopfieldNetwork:
 		#input pattern.
 		#HopfieldNotes.pdf on canvas is a good reference for asynchronous updating which
 		#has generally better convergence properties than synchronous updating.
+		vin = [0] * len(self.h)
+		changed = True
+		while changed:
+			ls = list(range(len(self.h)))
+			np.random.shuffle(ls)
+			changed = False
+			for x in ls:
+				tmp = 0
+				for i in range(len(self.h)):
+					tmp += input[i] * self.h[i][x]
+				if tmp >= 0:
+					if vin[x] == 0:
+						changed = True
+					vin[x] = 1
+				else:
+					if vin[x] == 1:
+						changed = True
+					vin[x] = 0
 
-
-
-		print("TODO")
-		utils.raiseNotDefined()
+		return vin
 
 	def classify(self, inputPattern):
 		#Classify should consider the input and classify as either, five or two
 		#You will call your retrieve function passing the input
 		#Compare the returned pattern to the 'perfect' instances
 		#return a string classification 'five', 'two' or 'unknown'
-
-		print("TODO")
-		utils.raiseNotDefined()
-
+		tmp = self.retrieve(inputPattern)
+		tmp_rev = [1 if x == 0 else 0 for x in tmp]
+		if tmp == five or tmp_rev == five:
+			return "five"
+		elif tmp == two or tmp_rev == two:
+			return "two"
+		else:
+			return "unknown"
 
 
 
 if __name__ == "__main__":
 	hopfieldNet = HopfieldNetwork(25)
 
-	utils.visualize(five)
-	utils.visualize(one)
+	# utils.visualize(five)
+	# utils.visualize(two)
 
 
-	#hopfieldNet.fit(patterns)
+	hopfieldNet.fit(patterns)
+
+	df = pd.read_csv("saeu4280-TrainingData.csv")
+	for index, row in df.iterrows():
+		print(hopfieldNet.classify(row[:-1]))
